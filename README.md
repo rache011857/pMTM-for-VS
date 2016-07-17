@@ -1,1 +1,1 @@
-# paired-move-multiple-try-Metropolis-sampler-for-variable-selection
+# paired-move multiple-try Metropolis sampler for variable selection
