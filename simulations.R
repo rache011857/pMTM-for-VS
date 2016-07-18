@@ -2,10 +2,12 @@ library(mvtnorm)
 library(glmnet)
 library(ncvreg)
 library(parcor)
+library(parallel)
 library(EMVS)
 library(foreach)
 library(doMC)
-registerDoMC(10)  
+num.cores <- detectCores()
+registerDoMC(num.cores)  
 
 
 p=500
@@ -34,9 +36,9 @@ e1s1 <- foreach (i=1:100) %dopar% {
   y <- Y-mean(Y)
   
   fit <- vector('list',7)
-  fit[[1]] <- benchmark(X=X, Y=Y, s0=100, g = n, n.iter = 1e4, burnin = 2000, prior='bb')
-  fit[[2]] <- pMTM.noc(X=X, Y=Y, s0=100, g = n, n.iter = 1e4, burnin = 2000, prior='bb')
-  fit[[3]] <- pMTM(X=X, Y=Y, s0=100, g = n, n.iter = 1e4, burnin = 2000, prior='bb')
+  fit[[1]] <- pSTMadpt(X=X, Y=Y, s0=100, g = n, n.iter = 1e4, burnin = 2000, prior='bb')
+  fit[[2]] <- pMTM(X=X, Y=Y, s0=100, g = n, n.iter = 1e4, burnin = 2000, prior='bb')
+  fit[[3]] <- pMTMadpt(X=X, Y=Y, s0=100, g = n, n.iter = 1e4, burnin = 2000, prior='bb')
   
   fit[[4]] <- cv.glmnet(x,y,family='gaussian',alpha=1,intercept=F)
   fit[[5]] <- adalasso(x,y,use.Gram = F,intercept = F)
