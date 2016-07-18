@@ -75,11 +75,11 @@ pSTMadpt <- function(X, Y, s0, zeta=2/3, g = nrow(X), cor.bound = 0.75, n.iter =
       flip.ix.add <- sample(nbhd.fwd,1,prob = weight.fwd)
       gamma.prime <- c(gamma[gamma!=flip.ix.rem],flip.ix.add)
       log.ml.prop <- logMl(gamma = gamma.prime, y = y, x = x, y.norm = y.norm, g = g)
-      fwd.prob <- weight[which(nbhd.fwd==flip.ix.add)]
+      fwd.prob <- weight.fwd[which(nbhd.fwd==flip.ix.add)]
       
       nbhd.bwd <- gamma.full[!gamma.full %in% gamma.prime]
       weight.bwd <- impt.prob[nbhd.bwd]/sum(impt.prob[nbhd.bwd])
-      bwd.prob <- weight[which(nbhd.bwd==flip.ix.rem)]
+      bwd.prob <- weight.bwd[which(nbhd.bwd==flip.ix.rem)]
       
       acpt.rate <- log(bwd.prob) - log(fwd.prob) + log.ml.prop - log.ml.cur
       
