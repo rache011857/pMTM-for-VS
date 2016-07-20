@@ -2,4 +2,3 @@
 2. Add variable VERBOSE to indicate the variables returned 
 3. Use mclapply
 4. Add references
-5. pMTM.R can be further simplified

@@ -228,7 +228,7 @@ modelCoef <- function(gamma, g, x, Y, sdx){
 #    the beta using Bayesian model averaging
 
 bmaCoef <- function(x, Y, sdx, g, gamma.model, post.prob){
-  coef <- t(sapply(gamma.model, model.coef, g=g, x=x, Y=Y, sdx=sdx))
+  coef <- t(sapply(gamma.model, modelCoef, g=g, x=x, Y=Y, sdx=sdx))
   return(apply(coef*post.prob,2,sum))
 }
 
