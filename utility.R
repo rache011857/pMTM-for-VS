@@ -67,7 +67,8 @@ logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
     return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
   } else{
     x.gamma <- x[,gamma]
-    rsq.gamma <- t(y)%*%x.gamma%*%solve(t(x.gamma)%*%x.gamma)%*%t(x.gamma)%*%y/y.norm
+    cp <- crossprod(x.gamma,y)
+    rsq.gamma <- crossprod(cp,solve(crossprod(x.gamma),cp))/y.norm
     return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
   }
 }
@@ -129,7 +130,8 @@ logPostc <- function(gamma, y, x, y.norm, prior, g=nrow(x), kappa=3, alpha=10, b
       return(-kappa*gamma.abs*log(p)-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
     } else{
       x.gamma <- x[,gamma]
-      rsq.gamma <- t(y)%*%x.gamma%*%solve(t(x.gamma)%*%x.gamma)%*%t(x.gamma)%*%y/y.norm
+      cp <- crossprod(x.gamma,y)
+      rsq.gamma <- crossprod(cp,solve(crossprod(x.gamma),cp))/y.norm
       return(-kappa*gamma.abs*log(p)-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
     }
   } else if (prior=='uni') {
@@ -140,7 +142,8 @@ logPostc <- function(gamma, y, x, y.norm, prior, g=nrow(x), kappa=3, alpha=10, b
       return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
     } else{
       x.gamma <- x[,gamma]
-      rsq.gamma <- t(y)%*%x.gamma%*%solve(t(x.gamma)%*%x.gamma)%*%t(x.gamma)%*%y/y.norm
+      cp <- crossprod(x.gamma,y)
+      rsq.gamma <- crossprod(cp,solve(crossprod(x.gamma),cp))/y.norm
       return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
     }
   } else {
@@ -151,7 +154,8 @@ logPostc <- function(gamma, y, x, y.norm, prior, g=nrow(x), kappa=3, alpha=10, b
       return(log(beta(alpha+1,beta+p-1))-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
     } else{
       x.gamma <- x[,gamma]
-      rsq.gamma <- t(y)%*%x.gamma%*%solve(t(x.gamma)%*%x.gamma)%*%t(x.gamma)%*%y/y.norm
+      cp <- crossprod(x.gamma,y)
+      rsq.gamma <- crossprod(cp,solve(crossprod(x.gamma),cp))/y.norm
       return(log(beta(alpha+gamma.abs,beta+p-gamma.abs))-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
     }
   }
@@ -208,7 +212,7 @@ modelCoef <- function(gamma, g, x, Y, sdx){
     coef[gamma] <- g/(g+1)*sum(x[,gamma]*Y)/sum(x[,gamma]^2)/sdx[gamma]
     return(coef)
   } else {
-    coef[gamma] <- g/(g+1)*solve(t(x[,gamma])%*%x[,gamma])%*%t(x[,gamma])%*%Y/sdx[gamma]
+    coef[gamma] <- g/(g+1)*solve(x[,gamma],crossprod(x[,gamma],Y))/sdx[gamma]
     return(coef)
   }
 }
