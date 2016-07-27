@@ -155,7 +155,7 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
     for(index in gamma) impt.probc <- impt.probc + indicator*wt.update[index,]
     impt.prob <- impt.probc/(M*impt.probc+p) 
     gamma.store[[iter]] <- gamma
-    model.size[iter] <- length(gamma)
+    model.size[iter] <- gamma.abs
   }
   gamma.mat <- t(sapply(gamma.store[-(1:burnin)],inclusion, p=p))
   incl.prob <- apply(gamma.mat,2,sum)/(n.iter-burnin)

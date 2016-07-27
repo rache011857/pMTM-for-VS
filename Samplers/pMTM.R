@@ -139,7 +139,7 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
       }
     }
     gamma.store[[iter]] <- gamma
-    model.size[iter] <- length(gamma)
+    model.size[iter] <- gamma.abs
   }
   gamma.mat <- t(sapply(gamma.store[-(1:burnin)],inclusion, p=p))
   incl.prob <- apply(gamma.mat,2,sum)/(n.iter-burnin)
