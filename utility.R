@@ -73,6 +73,22 @@ logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
   }
 }
 
+logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
+  gamma.abs <- length(gamma)
+  n <- nrow(x)
+  p <- ncol(x)
+  if (gamma.abs>1) {
+    x.gamma <- x[,gamma]
+    cp <- crossprod(x.gamma,y)
+    rsq.gamma <- crossprod(cp,solve(crossprod(x.gamma),cp))/y.norm
+    return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
+  } else if (gamma.abs==1){
+    x.gamma <- x[,gamma]
+    rsq.gamma <- sum(y*x.gamma)^2/sum(x.gamma^2)/y.norm
+    return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
+  } else{return (-n/2*log1p(g))}
+}
+
 ############################################################################## 
 
 ### compute the difference of logarithm of prior during MH step for add/remove move
@@ -212,7 +228,7 @@ modelCoef <- function(gamma, g, x, Y, sdx){
     coef[gamma] <- g/(g+1)*sum(x[,gamma]*Y)/sum(x[,gamma]^2)/sdx[gamma]
     return(coef)
   } else {
-    coef[gamma] <- g/(g+1)*solve(x[,gamma],crossprod(x[,gamma],Y))/sdx[gamma]
+    coef[gamma] <- g/(g+1)*solve(crossprod(x[,gamma]),crossprod(x[,gamma],Y))/sdx[gamma]
     return(coef)
   }
 }

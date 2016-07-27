@@ -21,6 +21,7 @@ pSTMrev <- function(X, Y, s0, g = nrow(X), n.iter = 1e4, burnin = 2000, prior){
   model.size <- rep(NA, n.iter)
   log.ml.cur <- logMl(gamma = gamma, y = y, x = x, y.norm = y.norm, g = g)
   
+  tic <- proc.time()
   for (iter in 1:n.iter){
     move.type <-  sample(3,1,prob=move.prob[gamma.abs+1,])
     n.prop[move.type] <- n.prop[move.type] + 1
@@ -73,6 +74,7 @@ pSTMrev <- function(X, Y, s0, g = nrow(X), n.iter = 1e4, burnin = 2000, prior){
     gamma.store[[iter]] <- gamma
     model.size[iter] <- gamma.abs
   }
+  toc <- proc.time()
   gamma.mat <- t(sapply(gamma.store[-(1:burnin)],inclusion, p=p))
   incl.prob <- apply(gamma.mat,2,sum)/(n.iter-burnin)
   MPM <- which(incl.prob>=0.5)
@@ -84,7 +86,7 @@ pSTMrev <- function(X, Y, s0, g = nrow(X), n.iter = 1e4, burnin = 2000, prior){
   model.size.avg <- mean(model.size[-(1:burnin)])
   model.size.HPM <- length(MPM)
   model.size.MPM <- length(HPM)
-  return(list(gamma.model=gamma.model, post.prob=post.prob, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
+  return(list(gamma.model=gamma.model, post.prob=post.prob, time.spend=toc-tic, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
 }
 
 

@@ -1,3 +1,4 @@
+
 pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n.iter = 1e4, burnin=2000, prior){
   n <- nrow(X)
   p <- ncol(X)
@@ -24,6 +25,7 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
   impt.prob <- impt.probc/sum(impt.probc)
   
   gamma.abs <- length(gamma)
+  ml.cur <- logMl(gamma=gamma, y=y, x=x, y.norm=y.norm, g=g)
   
   move.prob <- matrix(1/3, s0, 3)
   move.prob[1,] <- c(1,0,0)
@@ -32,6 +34,7 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
   model.size <- rep(NA,n.iter)
   gamma.store <- vector('list', n.iter)
   
+  tic <- proc.time()
   for (iter in 1:n.iter){
     move.type <-  sample(3,1,prob=move.prob[gamma.abs+1,])
     n.prop[move.type] <- n.prop[move.type] + 1
@@ -51,11 +54,11 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
         fwd.prob <- move.prob[gamma.abs+1,1] * weight[eta[fwd.ix]]
         
         if (gamma.abs > 0){
-          bwd.gamma.tilde <- lapply(1:(gamma.abs+1), function(j) return(gamma.prime[-j]))
-          bwd.nbhd.ls <- sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g)
+          bwd.gamma.tilde <- lapply(1:gamma.abs, function(j) return(gamma.prime[-j]))
+          bwd.nbhd.ls <- c(sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g), ml.cur)
           bwd.lp <- logSum(bwd.nbhd.ls)
         } else {
-          bwd.lp <- logMl(gamma=gamma, y=y, x=x, y.norm=y.norm, g=g)
+          bwd.lp <- ml.cur
         }
         bwd.prob <- move.prob[gamma.abs+2,2]
         
@@ -65,6 +68,7 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
           gamma <- sort(gamma.prime)
           n.acpt[1] <- n.acpt[1] + 1
           gamma.abs <- gamma.abs + 1
+          ml.cur <- fwd.nbhd.ls[fwd.ix]
         }
       }
     } else if (move.type==2){ ## remove
@@ -77,21 +81,24 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
       
       weight <- pmin(1, impt.prob * M)
       bwd.prob <- move.prob[gamma.abs,1] * weight[gamma[fwd.ix]]
-      weight[gamma.prime] <- 0
-      weight[gamma[fwd.ix]] <- 1
       
+      weight[gamma] <- 0
       eta <- which(as.logical(rbinom(p,1,weight)))
-      n.bwd <- length(eta)
-      bwd.gamma.tilde <- lapply(eta, function(j) return(c(gamma.prime, j)))
-      bwd.nbhd.ls <- sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g)
-      bwd.lp <- logSum(bwd.nbhd.ls)
       
+      if (length(eta)>0){
+        bwd.gamma.tilde <- lapply(eta, function(j) return(c(gamma.prime, j)))
+        bwd.nbhd.ls <- c(sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g), ml.cur)
+        bwd.lp <- logSum(bwd.nbhd.ls)
+      } else {
+        bwd.lp <- ml.cur
+      }
       
       acpt.rate <- fwd.lp - bwd.lp + log(bwd.prob) - log(fwd.prob) + logPrior(prior=prior, move.type=-1, p=p, gamma.abs=gamma.abs)
       if (log(runif(1))<acpt.rate) {
         gamma <- sort(gamma.prime)
         n.acpt[2] <- n.acpt[2] + 1
         gamma.abs <- gamma.abs - 1
+        ml.cur <- fwd.nbhd.ls[fwd.ix]
       }
     } else { ## swap
       weight <- pmin(1, impt.prob * M / gamma.abs)
@@ -133,30 +140,37 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
           }
         }
         bwd.prob <- weight[var.rem]
-        weight[var.rem] <- 1
+        weight[var.rem] <- 0
         eta.add <- which(as.logical(rbinom(p,1,weight)))
         n.bwd.temp <- length(eta.add)
         bwd.var.add <- c(bwd.var.add, eta.add)
         bwd.ix.rem <- c(bwd.ix.rem, rep(gamma.abs, n.bwd.temp))
         n.bwd <- n.bwd + n.bwd.temp
         
-        bwd.gamma.tilde <- lapply(1:n.bwd, function(j) return(c(gamma.prime[-bwd.ix.rem[j]], bwd.var.add[j])))
-        bwd.nbhd.ls <- sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g)
-        bwd.lp <- logSum(bwd.nbhd.ls)
-        
+        if (n.bwd>0){
+          bwd.gamma.tilde <- lapply(1:n.bwd, function(j) return(c(gamma.prime[-bwd.ix.rem[j]], bwd.var.add[j])))
+          bwd.nbhd.ls <- c(sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g), ml.cur)
+          bwd.lp <- logSum(bwd.nbhd.ls)
+        } else {
+          bwd.lp <- ml.cur
+        }
         acpt.rate <- fwd.lp - bwd.lp + log(bwd.prob) - log(fwd.prob)
         if (log(runif(1))<acpt.rate) {
           gamma <- sort(gamma.prime)
           n.acpt[3] <- n.acpt[3] + 1
+          ml.cur <- fwd.nbhd.ls[fwd.ix]
         }
       }
     }
-    indicator <- 'if'(iter<=burnin, iter/burnin, (iter-burnin)^(-zeta))
+#     indicator <- 'if'(iter<=burnin, iter/burnin, (abs(iter-burnin))^(-zeta))
+    indicator <- min(1,(abs(iter-burnin))^(-zeta))
     for(index in gamma) impt.probc <- impt.probc + indicator*wt.update[index,]
-    impt.prob <- impt.probc/(M*impt.probc+p) 
+    impt.prob <- impt.probc/(M*impt.probc+p)
     gamma.store[[iter]] <- gamma
     model.size[iter] <- gamma.abs
   }
+  toc <- proc.time()
+  
   gamma.mat <- t(sapply(gamma.store[-(1:burnin)],inclusion, p=p))
   incl.prob <- apply(gamma.mat,2,sum)/(n.iter-burnin)
   MPM <- which(incl.prob>=0.5)
@@ -168,5 +182,5 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
   model.size.avg <- mean(model.size[-(1:burnin)])
   model.size.HPM <- length(MPM)
   model.size.MPM <- length(HPM)
-  return(list(gamma.model=gamma.model, post.prob=post.prob, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
+  return(list(gamma.model=gamma.model, post.prob=post.prob, time.spend=toc-tic, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
 }

@@ -13,6 +13,7 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
   impt.prob <- min(1,M/p)
   
   gamma.abs <- length(gamma)
+  ml.cur <- logMl(gamma=gamma, y=y, x=x, y.norm=y.norm, g=g)
   
   move.prob <- matrix(1/3, s0, 3)
   move.prob[1,] <- c(1,0,0)
@@ -21,13 +22,13 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
   model.size <- rep(NA,n.iter)
   gamma.store <- vector('list', n.iter)
   
-  
+  tic <- proc.time()
   for (iter in 1:n.iter){
     move.type <-  sample(3,1,prob=move.prob[gamma.abs+1,])
     n.prop[move.type] <- n.prop[move.type] + 1
-    weight <- rep(impt.prob,p)
     
     if (move.type==1){ ## add
+      weight <- rep(impt.prob,p)
       weight[gamma] <- 0
       
       eta <-   which(as.logical(rbinom(p,1,weight)))
@@ -41,11 +42,11 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
         fwd.prob <- move.prob[gamma.abs+1,1] * impt.prob
         
         if (gamma.abs > 0){
-          bwd.gamma.tilde <- lapply(1:(gamma.abs+1), function(j) return(gamma.prime[-j]))
-          bwd.nbhd.ls <- sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g)
+          bwd.gamma.tilde <- lapply(1:gamma.abs, function(j) return(gamma.prime[-j]))
+          bwd.nbhd.ls <- c(sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g), ml.cur)
           bwd.lp <- logSum(bwd.nbhd.ls)
         } else {
-          bwd.lp <- logMl(gamma=gamma, y=y, x=x, y.norm=y.norm, g=g)
+          bwd.lp <- ml.cur
         }
         bwd.prob <- move.prob[gamma.abs+2,2]
         
@@ -55,9 +56,12 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
           gamma <- sort(gamma.prime)
           n.acpt[1] <- n.acpt[1] + 1
           gamma.abs <- gamma.abs + 1
+          ml.cur <- fwd.nbhd.ls[fwd.ix]
         }
       }
     } else if (move.type==2){ ## remove
+      weight <- rep(impt.prob,p)
+      
       gamma.tilde <- lapply(1:gamma.abs, function(j) return(gamma[-j]))
       fwd.nbhd.ls <- sapply(gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g)
       fwd.lp <- logSum(fwd.nbhd.ls)
@@ -66,21 +70,23 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
       fwd.prob <- move.prob[gamma.abs+1,2]
       
       bwd.prob <- move.prob[gamma.abs,1] * impt.prob
-      weight[gamma.prime] <- 0
-      weight[gamma[fwd.ix]] <- 1
-      
+      weight[gamma] <- 0
       eta <- which(as.logical(rbinom(p,1,weight)))
-      n.bwd <- length(eta)
-      bwd.gamma.tilde <- lapply(eta, function(j) return(c(gamma.prime, j)))
-      bwd.nbhd.ls <- sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g)
-      bwd.lp <- logSum(bwd.nbhd.ls)
       
+      if (length(eta)>0){
+        bwd.gamma.tilde <- lapply(eta, function(j) return(c(gamma.prime, j)))
+        bwd.nbhd.ls <- c(sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g), ml.cur)
+        bwd.lp <- logSum(bwd.nbhd.ls)
+      } else {
+        bwd.lp <- ml.cur
+      }
       
       acpt.rate <- fwd.lp - bwd.lp + log(bwd.prob) - log(fwd.prob) + logPrior(prior=prior, move.type=-1, p=p, gamma.abs=gamma.abs)
       if (log(runif(1))<acpt.rate) {
         gamma <- sort(gamma.prime)
         n.acpt[2] <- n.acpt[2] + 1
         gamma.abs <- gamma.abs - 1
+        ml.cur <- fwd.nbhd.ls[fwd.ix]
       }
     } else { ## swap
       weight <- rep(min(1, M/p/gamma.abs), p)
@@ -120,27 +126,33 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
             n.bwd <- n.bwd + n.bwd.temp
           }
         }
-        weight[var.rem] <- 1
+        weight[var.rem] <- 0
         eta.add <- which(as.logical(rbinom(p,1,weight)))
         n.bwd.temp <- length(eta.add)
         bwd.var.add <- c(bwd.var.add, eta.add)
         bwd.ix.rem <- c(bwd.ix.rem, rep(gamma.abs, n.bwd.temp))
         n.bwd <- n.bwd + n.bwd.temp
         
-        bwd.gamma.tilde <- lapply(1:n.bwd, function(j) return(c(gamma.prime[-bwd.ix.rem[j]], bwd.var.add[j])))
-        bwd.nbhd.ls <- sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g)
-        bwd.lp <- logSum(bwd.nbhd.ls)
+        if (n.bwd>0){
+          bwd.gamma.tilde <- lapply(1:n.bwd, function(j) return(c(gamma.prime[-bwd.ix.rem[j]], bwd.var.add[j])))
+          bwd.nbhd.ls <- c(sapply(bwd.gamma.tilde, logMl, y=y, x=x, y.norm=y.norm, g=g), ml.cur)
+          bwd.lp <- logSum(bwd.nbhd.ls)
+        } else {
+          bwd.lp <- ml.cur
+        }
         
         acpt.rate <- fwd.lp - bwd.lp
         if (log(runif(1))<acpt.rate) {
           gamma <- sort(gamma.prime)
           n.acpt[3] <- n.acpt[3] + 1
+          ml.cur <- fwd.nbhd.ls[fwd.ix]
         }
       }
     }
     gamma.store[[iter]] <- gamma
     model.size[iter] <- gamma.abs
   }
+  toc <- proc.time()
   gamma.mat <- t(sapply(gamma.store[-(1:burnin)],inclusion, p=p))
   incl.prob <- apply(gamma.mat,2,sum)/(n.iter-burnin)
   MPM <- which(incl.prob>=0.5)
@@ -152,5 +164,5 @@ pMTM <- function(X, Y, s0, g=nrow(X), M = 5, n.iter = 1e4, burnin = 2000, prior)
   model.size.avg <- mean(model.size[-(1:burnin)])
   model.size.HPM <- length(MPM)
   model.size.MPM <- length(HPM)
-  return(list(gamma.model=gamma.model, post.prob=post.prob, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
+  return(list(gamma.model=gamma.model, post.prob=post.prob, time.spend=toc-tic, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
 }
