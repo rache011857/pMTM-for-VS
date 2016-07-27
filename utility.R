@@ -60,23 +60,6 @@ logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
   gamma.abs <- length(gamma)
   n <- nrow(x)
   p <- ncol(x)
-  if (gamma.abs==0) {return (-n/2*log1p(g))
-  } else if (gamma.abs==1){
-    x.gamma <- x[,gamma]
-    rsq.gamma <- sum(y*x.gamma)^2/sum(x.gamma^2)/y.norm
-    return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
-  } else{
-    x.gamma <- x[,gamma]
-    cp <- crossprod(x.gamma,y)
-    rsq.gamma <- crossprod(cp,solve(crossprod(x.gamma),cp))/y.norm
-    return(-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
-  }
-}
-
-logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
-  gamma.abs <- length(gamma)
-  n <- nrow(x)
-  p <- ncol(x)
   if (gamma.abs>1) {
     x.gamma <- x[,gamma]
     cp <- crossprod(x.gamma,y)
