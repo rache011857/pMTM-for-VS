@@ -1,3 +1,5 @@
+library(mvtnorm)
+
 ##e1s1
 n <- 100
 p <- 500

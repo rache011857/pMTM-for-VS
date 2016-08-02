@@ -86,17 +86,22 @@ logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
 ##  ------OUTPUTS------
 #    the difference of logarithm of prior using in the MH updating 
 
-logPrior <- function(prior, move.type, p, gamma.abs=0, alpha=10, beta=p-10){
-  if (prior=='p'){
-    return(-move.type*log(p))
-  } else {
-    if (move.type==1){
-      return(log(gamma.abs+alpha)-log(p-gamma.abs-1+beta))
-    }
-    else {
-      return(-log(gamma.abs+alpha-1)+log(p-gamma.abs+beta))
-    }
-  }
+# logPrior <- function(prior, move.type, p, gamma.abs=0, alpha=10, beta=p-10){
+#   if (prior=='p'){
+#     return(-move.type*log(p))
+#   } else {
+#     if (move.type==1){
+#       return(log(gamma.abs+alpha)-log(p-gamma.abs-1+beta))
+#     }
+#     else {
+#       return(-log(gamma.abs+alpha-1)+log(p-gamma.abs+beta))
+#     }
+#   }
+# }
+
+
+logPrior <- function(prior='bb', move.type, p, gamma.abs=0, alpha=10, beta=p-10){
+    return('if'(move.type==1,log(gamma.abs+alpha)-log(p-gamma.abs-1+beta),-log(gamma.abs+alpha-1)+log(p-gamma.abs+beta)))
 }
 
 ############################################################################## 

@@ -26,13 +26,14 @@ logPostc <- function(X, Y, g=p^3, s0=100, gamma){
     return(-3*gamma.abs*log(p)-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
   } else{
     X.gamma <- X[,gamma]
-    rsq.gamma <- t(Y)%*%X.gamma%*%solve(t(X.gamma)%*%X.gamma)%*%t(X.gamma)%*%Y/Y.norm
+    cp <- crossprod(X.gamma,Y)
+    rsq.gamma <- crossprod(cp,solve(crossprod(X.gamma),cp))/Y.norm
     return(-3*gamma.abs*log(p)-gamma.abs/2*log1p(g)-n/2*log1p(g*(1-rsq.gamma)))
   }
 }
 
 
-symScan <- function(X, Y, K, init, s0=100, g=p^3){
+symScan <- function(X, Y, K, init, s0=100, g=p^3, sym = TRUE){
   p <- ncol(X)
   gamma <- rep(0,p)
   if (init=='null'){
@@ -43,7 +44,7 @@ symScan <- function(X, Y, K, init, s0=100, g=p^3){
   lp.cur <- logPostc(X,Y,g,s0,gamma)
   logPostc.tr <- rep(NA, K*p)
   for (k in 1:K){
-    gamma.full <- sample(p,p)
+    gamma.full <- sample(p,p, replace = !sym)
     for (j in 1:p){
       gamma.prime <- gamma
       gamma.prime[gamma.full[j]] <- 1 - gamma[gamma.full[j]]
@@ -61,8 +62,8 @@ symScan <- function(X, Y, K, init, s0=100, g=p^3){
 
 lp <- matrix(NA,nrow=M,ncol=K*p)
 for (m in 1:50) {
-  lp[m,] <- symScan(X=X, Y=Y, K=K, init='null')
-  lp[m+50,] <- symScan(X=X, Y=Y, K=K, init='true')
+  lp[m,] <- symScan(X=X, Y=Y, K=K, init='null', sym=F)
+  lp[m+50,] <- symScan(X=X, Y=Y, K=K, init='true', sym=F)
 }
 
 plot(lp[1,],type='l',col='grey')
