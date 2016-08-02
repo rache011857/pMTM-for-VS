@@ -1,4 +1,3 @@
-
 pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n.iter = 1e4, burnin=2000, prior){
   n <- nrow(X)
   p <- ncol(X)
@@ -33,7 +32,8 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
   
   model.size <- rep(NA,n.iter)
   gamma.store <- vector('list', n.iter)
-  
+  indicator <- ifelse(1:n.iter<=burnin, 1:n.iter/burnin, (abs(1:n.iter-burnin))^(-zeta))
+    
   tic <- proc.time()
   for (iter in 1:n.iter){
     move.type <-  sample(3,1,prob=move.prob[gamma.abs+1,])
@@ -162,9 +162,7 @@ pMTMadpt <- function(X, Y, s0, zeta = 2/3, g=nrow(X), cor.bound = 0.75, M = 5, n
         }
       }
     }
-#     indicator <- 'if'(iter<=burnin, iter/burnin, (abs(iter-burnin))^(-zeta))
-    indicator <- min(1,(abs(iter-burnin))^(-zeta))
-    for(index in gamma) impt.probc <- impt.probc + indicator*wt.update[index,]
+    for(index in gamma) impt.probc <- impt.probc + indicator[iter]*wt.update[index,]
     impt.prob <- impt.probc/(M*impt.probc+p)
     gamma.store[[iter]] <- gamma
     model.size[iter] <- gamma.abs

@@ -31,6 +31,7 @@ pSTMadpt <- function(X, Y, s0, zeta=2/3, g = nrow(X), cor.bound = 0.75, n.iter =
   gamma.store <- vector('list', n.iter)
   model.size <- rep(NA, n.iter)
   log.ml.cur <- logMl(gamma = gamma, y = y, x = x, y.norm = y.norm, g = g)
+  indicator <- ifelse(1:n.iter<=burnin, 1:n.iter/burnin, (abs(1:n.iter-burnin))^(-zeta))
   
   tic <- proc.time()
   for (iter in 1:n.iter){
@@ -90,10 +91,7 @@ pSTMadpt <- function(X, Y, s0, zeta=2/3, g = nrow(X), cor.bound = 0.75, n.iter =
         n.acpt[3] <- n.acpt[3] + 1
       }
     }
-#     indicator <- 'if'(iter<=burnin, iter/burnin, (iter-burnin)^(-zeta))
-    indicator <- min(1,(abs(iter-burnin))^(-zeta))
-    for(index in gamma) impt.prob <- impt.prob + indicator*wt.update[index,]
-    
+    for(index in gamma) impt.prob <- impt.prob + indicator[iter]*wt.update[index,]
     gamma.store[[iter]] <- gamma
     model.size[iter] <- gamma.abs
   }
