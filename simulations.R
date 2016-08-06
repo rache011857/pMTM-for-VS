@@ -70,7 +70,7 @@ e1s1 <- foreach (i=1:100) %dopar% {
     beta[j,] <- model.coef(gamma=gamma[[j]],g=n,x=x,Y=Y,sdx=sdx)
   }
   for (j in 12:14){
-    beta[j,] <- bma.coef(x=x, Y=Y, sdx=sdx, g=n, gamma.model=fit[[j-11]]$gamma.model, post.prob=fit[[j-11]]$post.prob)
+    beta[j,] <- bma.coef(x=x, Y=Y, sdx=sdx, g=n, gamma.model=fit[[j-11]]$model, post.prob=fit[[j-11]]$post.prob)
   }
   
   mse <- rep(NA,14)

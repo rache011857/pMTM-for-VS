@@ -1,3 +1,5 @@
+library(plyr)
+
 pSTMadpt <- function(X, Y, s0, zeta=2/3, g = nrow(X), cor.bound = 0.75, n.iter = 1e4, burnin = 2000, prior){
   
   n <- nrow(X)
@@ -96,16 +98,16 @@ pSTMadpt <- function(X, Y, s0, zeta=2/3, g = nrow(X), cor.bound = 0.75, n.iter =
     model.size[iter] <- gamma.abs
   }
   toc <- proc.time()
-  gamma.mat <- t(sapply(gamma.store[-(1:burnin)],inclusion, p=p))
-  incl.prob <- apply(gamma.mat,2,sum)/(n.iter-burnin)
-  MPM <- which(incl.prob>=0.5)
-  gamma.count <- table(apply(gamma.mat, 1, paste, collapse=" "))
-  gamma.sort <- sort(gamma.count,decreasing = T)
-  post.prob <- as.numeric(gamma.sort)/(n.iter-burnin)
-  gamma.model <- lapply(names(gamma.sort),gammaSplit)
-  HPM <- gamma.model[[1]]
+  inclusion <- as.matrix(count(unlist(gamma.store[-(1:burnin)])))
+  MPM <- inclusion[which(inclusion[,2]>=(n.iter-burnin)/2),1]
+  model.count <- count(sapply(gamma.store[-(1:burnin)], paste, collapse=" "))
+  model.sort <- model.count[order(-model.count[2]),]
+  post.prob <- model.sort[[2]]/(n.iter-burnin)
+  model <- lapply(model.sort$x,modelSplit)
+  HPM <- model[[1]]
   model.size.avg <- mean(model.size[-(1:burnin)])
   model.size.HPM <- length(MPM)
   model.size.MPM <- length(HPM)
-  return(list(gamma.model=gamma.model, post.prob=post.prob, time.spend=toc-tic, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
+  
+  return(list(model=model, post.prob=post.prob, time.spend=toc-tic, n.prop=n.prop, n.acpt=n.acpt, n.iter=n.iter, MPM=MPM, HPM=HPM, burnin=burnin, model.size.avg=model.size.avg,model.size.MPM=model.size.MPM,model.size.HPM=model.size.HPM))
 }

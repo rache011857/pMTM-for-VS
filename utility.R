@@ -176,24 +176,24 @@ logPostc <- function(gamma, y, x, y.norm, prior, g=nrow(x), kappa=3, alpha=10, b
 ##  ------OUTPUTS------
 #    incl   : a vector of indicators of indices   
 
-inclusion <- function(gamma, p) {
-  incl <- rep(0,p)
-  incl[gamma] <- 1
-  return(incl)
-}
+# inclusion <- function(gamma, p) {
+#   incl <- rep(0,p)
+#   incl[gamma] <- 1
+#   return(incl)
+# }
 
 
 
 ############################################################################## 
 
-### split and convert gamma from character to 0/1 numerical values 
+### split and convert gamma from a factor list to index vector 
 
 ##  ------ARGUMENTS------
-#    gamma.sort      : a vector of appearance times with model as vector name  
+#    model.sort      : a index vector of factor type  
 ##  ------OUTPUTS------
-#    an indicator vector
+#    a vector of index
 
-gammaSplit <- function(gamma.sort) {return(which(as.numeric(strsplit(gamma.sort, " ")[[1]])==1))}
+modelSplit <- function(model.sort) {return(as.numeric(strsplit(as.character(model.sort), " ")[[1]]))}
 
 ############################################################################## 
 
