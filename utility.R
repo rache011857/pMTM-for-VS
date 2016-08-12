@@ -57,6 +57,7 @@ wtUpdate <- function(p, ix.vec, wt.vector){
 ##  ------OUTPUTS------
 #    logarithm of marginal likelihood up to a normalizing constant
 logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
+  n.le <<- n.le + 1
   gamma.abs <- length(gamma)
   n <- nrow(x)
   p <- ncol(x)
@@ -193,7 +194,7 @@ logPostc <- function(gamma, y, x, y.norm, prior, g=nrow(x), kappa=3, alpha=10, b
 ##  ------OUTPUTS------
 #    a vector of index
 
-modelSplit <- function(model.sort) {return(as.numeric(strsplit(as.character(model.sort), " ")[[1]]))}
+modelSplit <- function(model.sort) {return(as.integer(strsplit(as.character(model.sort), " ")[[1]]))}
 
 ############################################################################## 
 
