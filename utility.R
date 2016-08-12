@@ -57,7 +57,6 @@ wtUpdate <- function(p, ix.vec, wt.vector){
 ##  ------OUTPUTS------
 #    logarithm of marginal likelihood up to a normalizing constant
 logMl <- function(gamma, y, x, y.norm, g=nrow(x)){
-  n.le <<- n.le + 1
   gamma.abs <- length(gamma)
   n <- nrow(x)
   p <- ncol(x)
